@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - Neon Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Neon Board</h1>
+        <div class="card">
+            <h2>로그인</h2>
+            <form id="loginForm">
+                <input type="email" id="email" placeholder="이메일" required>
+                <input type="password" id="password" placeholder="비밀번호" required>
+                <button type="submit">로그인</button>
+            </form>
+            <p id="errorMessage" class="error"></p>
+            <p style="text-align: center; margin-top: 20px;">
+                계정이 없나요? <a href="/signup.html">회원가입</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/index.html'; // Will create this in Step 8
+                } else {
+                    errorMessage.textContent = data.message || '로그인에 실패했습니다.';
+                }
+            } catch (err) {
+                errorMessage.textContent = '서버 통신 에러가 발생했습니다.';
+            }
+        });
+    </script>
+</body>
+</html>

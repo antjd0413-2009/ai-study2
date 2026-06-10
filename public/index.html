@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>홈 - Neon Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/index.html">홈</a>
+        <span id="userInfo"></span>
+        <a href="#" id="logoutBtn" style="display: none;">로그아웃</a>
+        <a href="/login.html" id="loginBtn">로그인</a>
+    </nav>
+    <div class="container">
+        <h1>Neon Board</h1>
+        <div id="postList">
+            <p>게시글을 불러오는 중...</p>
+        </div>
+    </div>
+
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('userInfo').textContent = `${user.username}님 환영합니다!`;
+                    document.getElementById('logoutBtn').style.display = 'inline';
+                    document.getElementById('loginBtn').style.display = 'none';
+                }
+            } catch (err) {
+                console.error('인증 체크 실패');
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.reload();
+        });
+
+        checkAuth();
+    </script>
+</body>
+</html>
