@@ -25,10 +25,6 @@ app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Neon Board API is running');
-});
-
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

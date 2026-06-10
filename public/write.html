@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글쓰기 - Neon Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #FF8C00;
+        }
+        textarea {
+            height: 300px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index.html">홈</a>
+        <span id="userInfo"></span>
+        <a href="#" id="logoutBtn" style="display: none;">로그아웃</a>
+        <a href="/login.html" id="loginBtn">로그인</a>
+    </nav>
+    <div class="container">
+        <h1 id="pageTitle">새 글 작성</h1>
+        <div class="card">
+            <form id="postForm">
+                <div class="form-group">
+                    <label for="title">제목</label>
+                    <input type="text" id="title" required placeholder="제목을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="content">내용</label>
+                    <textarea id="content" required placeholder="내용을 입력하세요"></textarea>
+                </div>
+                <button type="submit" id="submitBtn">저장하기</button>
+            </form>
+            <p id="errorMessage" class="error"></p>
+            <button onclick="history.back()" style="background-color: #333; margin-top: 10px;">취소</button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+        let currentUser = null;
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    currentUser = await response.json();
+                    document.getElementById('userInfo').textContent = `${currentUser.username}님`;
+                    document.getElementById('logoutBtn').style.display = 'inline';
+                    document.getElementById('loginBtn').style.display = 'none';
+                } else {
+                    alert('로그인이 필요합니다.');
+                    location.href = '/login.html';
+                }
+            } catch (err) {
+                location.href = '/login.html';
+            }
+        }
+
+        async function loadPostForEdit() {
+            if (!editId) return;
+            document.getElementById('pageTitle').textContent = '게시글 수정';
+            document.getElementById('submitBtn').textContent = '수정완료';
+
+            try {
+                const response = await fetch(`/api/posts/${editId}`);
+                const post = await response.json();
+                
+                if (post.user_id !== currentUser.id) {
+                    alert('수정 권한이 없습니다.');
+                    location.href = '/index.html';
+                    return;
+                }
+
+                document.getElementById('title').value = post.title;
+                document.getElementById('content').value = post.content;
+            } catch (err) {
+                alert('게시글을 불러오지 못했습니다.');
+            }
+        }
+
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const errorMessage = document.getElementById('errorMessage');
+
+            const url = editId ? `/api/posts/${editId}` : '/api/posts';
+            const method = editId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+
+                if (response.ok) {
+                    alert(editId ? '수정되었습니다.' : '작성되었습니다.');
+                    location.href = editId ? `/post.html?id=${editId}` : '/index.html';
+                } else {
+                    const data = await response.json();
+                    errorMessage.textContent = data.message || '저장에 실패했습니다.';
+                }
+            } catch (err) {
+                errorMessage.textContent = '서버 통신 에러가 발생했습니다.';
+            }
+        });
+
+        checkAuth().then(loadPostForEdit);
+    </script>
+</body>
+</html>
