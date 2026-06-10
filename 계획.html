@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>프로젝트 계획서</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
+        h1, h2 { color: #333; }
+        .section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .design-sample { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>프로젝트 계획서: 초심자용 초간단 게시판 (익명 댓글 & 추천)</h1>
+
+    <div class="section">
+        <h2>1. 프로젝트명</h2>
+        <p><strong>Neon-Board-Proto</strong> (익명 댓글과 추천 기능이 있는 프로토타입 게시판)</p>
+    </div>
+
+    <div class="section">
+        <h2>2. 기술 스택 및 환경 정보</h2>
+        <ul>
+            <li><strong>HTML/CSS</strong>: 웹페이지의 구조와 스타일을 담당.</li>
+            <li><strong>TypeScript</strong>: 자바스크립트에 타입을 추가하여 더 안전하게 코딩할 수 있게 해줌.</li>
+            <li><strong>Node.js & Express</strong>: 서버 구축을 위한 런타임 및 프레임워크. 가볍고 빠름.</li>
+            <li><strong>Neon (PostgreSQL)</strong>: 클라우드 기반의 관계형 데이터베이스.</li>
+            <li><strong>DB 접속 정보</strong>: <code>postgresql://neondb_owner:npg_baKucC7lZE6N@ep-fancy-math-aovxlzsw-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require</code></li>
+            <li><strong>GitHub 저장소</strong>: <a href="https://github.com/antjd0413-2009/ai-study2" target="_blank">https://github.com/antjd0413-2009/ai-study2</a></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>3. 시각적 디자인 선택</h2>
+        <div class="design-sample" style="border: 2px solid #ff9800; background-color: #fff3e0;">
+            <h3>4. 하이 콘트라스트 (High Contrast) - [선택됨]</h3>
+            <p>검정색 배경에 오렌지색 포인트 등 강렬한 대비를 사용한 현대적인 감각.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>4. 테이블 목록 및 CREATE문</h2>
+        <p>데이터베이스 구성을 위한 테이블 구조입니다.</p>
+        <pre>
+-- 1. 사용자 테이블
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    auto_login_token VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. 게시글 테이블
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. 댓글 테이블
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. 추천 테이블
+CREATE TABLE recommendations (
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (post_id, user_id)
+);
+        </pre>
+    </div>
+</body>
+</html>
