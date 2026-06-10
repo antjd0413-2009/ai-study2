@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 보기 - Neon Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .post-detail {
+            border: 2px solid #FFA500;
+            padding: 20px;
+            background-color: #1a1a1a;
+        }
+        .post-meta {
+            border-bottom: 1px solid #FFA500;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: #FF8C00;
+        }
+        .post-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .actions button {
+            width: auto;
+        }
+        .comment-section {
+            margin-top: 40px;
+            border-top: 1px solid #FFA500;
+            padding-top: 20px;
+        }
+        .comment {
+            border-bottom: 1px solid #333;
+            padding: 10px 0;
+        }
+        .comment-header {
+            font-size: 0.9em;
+            color: #FF8C00;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index.html">홈</a>
+        <span id="userInfo"></span>
+        <a href="#" id="logoutBtn" style="display: none;">로그아웃</a>
+        <a href="/login.html" id="loginBtn">로그인</a>
+    </nav>
+    <div class="container">
+        <div id="postArea">
+            <p>게시글을 불러오는 중...</p>
+        </div>
+
+        <div class="actions" id="authorActions" style="display: none;">
+            <button id="editBtn">수정</button>
+            <button id="deleteBtn" style="background-color: #ff4500;">삭제</button>
+        </div>
+
+        <button onclick="location.href='/index.html'">목록으로</button>
+
+        <div class="comment-section">
+            <h3>댓글</h3>
+            <div id="commentList">
+                <p>댓글을 불러오는 중...</p>
+            </div>
+            <!-- Comment form will be added in Step 9 -->
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+        let currentUser = null;
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    currentUser = await response.json();
+                    document.getElementById('userInfo').textContent = `${currentUser.username}님`;
+                    document.getElementById('logoutBtn').style.display = 'inline';
+                    document.getElementById('loginBtn').style.display = 'none';
+                }
+            } catch (err) {}
+        }
+
+        async function fetchPost() {
+            try {
+                const response = await fetch(`/api/posts/${postId}`);
+                if (!response.ok) throw new Error('Post not found');
+                const post = await response.json();
+
+                const date = new Date(post.created_at).toLocaleString();
+                document.getElementById('postArea').innerHTML = `
+                    <div class="post-detail">
+                        <h1>${post.title}</h1>
+                        <div class="post-meta">
+                            <span>작성자: ${post.username}</span>
+                            <span>작성일: ${date}</span>
+                        </div>
+                        <div class="post-content">${post.content}</div>
+                        <div style="text-align: center;">
+                            <button id="recommendBtn" style="width: auto;">추천 ${post.recommendations}</button>
+                        </div>
+                    </div>
+                `;
+
+                if (currentUser && currentUser.id === post.user_id) {
+                    document.getElementById('authorActions').style.display = 'flex';
+                    document.getElementById('editBtn').onclick = () => location.href = `/write.html?id=${postId}`;
+                    document.getElementById('deleteBtn').onclick = deletePost;
+                }
+
+                document.getElementById('recommendBtn').onclick = toggleRecommend;
+                
+                fetchComments();
+            } catch (err) {
+                document.getElementById('postArea').innerHTML = '<p>게시글을 불러오지 못했습니다.</p>';
+            }
+        }
+
+        async function fetchComments() {
+            try {
+                const response = await fetch(`/api/comments/${postId}`);
+                const comments = await response.json();
+                const list = document.getElementById('commentList');
+                list.innerHTML = '';
+
+                if (comments.length === 0) {
+                    list.innerHTML = '<p>댓글이 없습니다.</p>';
+                    return;
+                }
+
+                comments.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'comment';
+                    const date = new Date(c.created_at).toLocaleString();
+                    div.innerHTML = `
+                        <div class="comment-header">${c.username} (${date})</div>
+                        <div>${c.content}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                document.getElementById('commentList').innerHTML = '<p>댓글 로딩 실패</p>';
+            }
+        }
+
+        async function toggleRecommend() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            try {
+                const response = await fetch('/api/recommendations/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ post_id: postId })
+                });
+                if (response.ok) fetchPost();
+            } catch (err) {}
+        }
+
+        async function deletePost() {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            try {
+                const response = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('삭제되었습니다.');
+                    location.href = '/index.html';
+                }
+            } catch (err) {}
+        }
+
+        checkAuth().then(fetchPost);
+    </script>
+</body>
+</html>
