@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "start": "node --loader ts-node/esm src/index.ts",
+    "dev": "nodemon --exec node --loader ts-node/esm src/index.ts",
+    "setup-db": "node --loader ts-node/esm setup-db.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
